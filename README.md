@@ -15,6 +15,7 @@
 - [Installation](#installation)
 - [Usage](#usage)
 - [Uninstall](#uninstall)
+- [Yanked Versions](#yanked-versions)
 
 ## Installation
 
@@ -97,7 +98,7 @@ pip install wrapper-bar==0.1.3
 
       # and now we will execute them with the loading bar as the 
       # front.
-      
+
       >>> from wrapper_bar.wrapper import Wrapper
       >>> w = Wrapper("Loading:")
       >>> w.pyShellWrapper(pythoncodes, dependencies) # this will output the following:
@@ -117,3 +118,7 @@ To uninstall `wrapper-bar`, use pip.
 ```bash
 pip uninstall wrapper-bar
 ```
+
+## Yanked Versions
+
+- **_v0.1.2_**
