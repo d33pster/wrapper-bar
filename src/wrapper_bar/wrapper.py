@@ -44,6 +44,7 @@ class Wrapper:
     `Other Functions include:`
     >>> wrapControl.shellWrapper(<params>) # wrap shell commands into a progress bar.
     >>> wrapControl.pyWrapper(<params>) # wrap python scripts into a progress bar.
+    >>> wrapControl.pyShellWrapper(<params>) # wrap inline python codes into a progress bar.
     
     `Parameters:`
     # Wrapper class
@@ -60,6 +61,9 @@ class Wrapper:
                                  width:float (optional), logger:bool (optional),
                                  logfile:TextIOWrapper (optional),
                                  logfile_auto_close:bool (optional))
+    # pyShellWrapper function
+    >>> wrapControl.pyShellWrapper(pythoncodes: list[str], delay:float (optional),
+                                   width:float (optional))
     
     For Beginners, wrapping commands across a given progress bar might seem
     awfully time consuming. This Module is an effort to provide satisfaction to
@@ -146,3 +150,23 @@ class Wrapper:
         
         if logfile_auto_close:
             logfile.close()
+    
+    def pyShellWrapper(self, pythoncodes: list[str], delay:float = 0.1, width:float = 50):
+        """Wrap inline python codes with a progressbar"""
+        
+        widgets = [self.label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
+        bar = progressbar.ProgressBar(widgets=widgets, maxval=100, term_width=width).start()
+        
+        interval = int(100/(len(pythoncodes)+1))
+        iterator = 0
+        
+        for i in range(100):
+            if i>=interval and (i==interval or i%interval==0) and iterator<len(pythoncodes):
+                exec(pythoncodes[iterator])
+                iterator += 1
+                bar.update(i)
+            else:
+                sleep(delay)
+                bar.update(i)
+        
+        bar.finish()
