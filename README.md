@@ -6,6 +6,7 @@
 
 ![PyPI - Version](https://img.shields.io/pypi/v/wrapper-bar)
 ![PyPI - Status](https://img.shields.io/pypi/status/wrapper-bar)
+![Dependents (via libraries.io)](https://img.shields.io/librariesio/dependents/pypi/wrapper-bar)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wrapper-bar)
 ![Libraries.io dependency status for latest release](https://img.shields.io/librariesio/release/pypi/wrapper-bar)
 ![PyPI - License](https://img.shields.io/pypi/l/wrapper-bar)
