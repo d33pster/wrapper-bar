@@ -21,7 +21,7 @@
 To install `wrapper-bar`, use pip.
 
 ```bash
-pip install wrapper-bar==0.1.1
+pip install wrapper-bar==0.1.2
 ```
 
 ## Usage
@@ -66,6 +66,13 @@ pip install wrapper-bar==0.1.1
     ```python
     >>> wrapControl.pyWrapper(*params) # parameters are in the docstring.
     # pyWrapper can wrap list of python scripts across the progressbar.
+    ```
+  
+  - `pyShellWrapper`
+  
+    ```python
+    >>> wrapControl.pyShellWrapper(*params) # parametes are in the docstring.
+    # pyShellWrapper can wrap inline python code across a progressbar.
     ```
 
 ## Uninstall
