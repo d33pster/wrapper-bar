@@ -29,8 +29,12 @@ from os import getcwd as pwd
 from os.path import join as jPath, abspath
 from time import sleep
 from datetime import datetime
+from types import CodeType
+from re import match
 import progressbar
 import subprocess
+
+from wrapper_bar.Exceptions import WrapperCodeDefinitionError
 
 class Wrapper:
     """Wrapper Class: Wrap commands/scripts across a progress bar.
@@ -62,8 +66,18 @@ class Wrapper:
                                  logfile:TextIOWrapper (optional),
                                  logfile_auto_close:bool (optional))
     # pyShellWrapper function
-    >>> wrapControl.pyShellWrapper(pythoncodes: list[str], delay:float (optional),
-                                   width:float (optional))
+    >>> wrapControl.pyShellWrapper(pythoncodes: list[str], dependencies: list[str] (optional)
+                                   delay:float (optional), width:float (optional))
+    
+    # pyShellWrapper parameters
+    pythoncodes -> list of python codes
+    dependencies -> list of dependencies. Suppose 'a = b+c' is among the python codes list.
+                    Therefore, b and c's value are dependencies and depencies=['b=10', 'c=115'].
+
+    NOTE: Avoid using any print, return or yield statements to avoid breaking the progress bar.
+    
+    # How to get the value of 'a' from 'a=b+c' after execution?
+    >>> a = wrapControl.pyShellWrapperResults['a']
     
     For Beginners, wrapping commands across a given progress bar might seem
     awfully time consuming. This Module is an effort to provide satisfaction to
@@ -151,8 +165,29 @@ class Wrapper:
         if logfile_auto_close:
             logfile.close()
     
-    def pyShellWrapper(self, pythoncodes: list[str], delay:float = 0.1, width:float = 50):
+    def __compile(self, codes:list[str]) -> list[CodeType]:
+        compiledcodes:list[CodeType] = []
+        for code in codes:
+            compiledcode = compile(code, '<string>', 'exec')
+            compiledcodes.append(compiledcode)
+        
+        return compiledcodes
+    
+    def pyShellWrapper(self, pythoncodes: list[str], dependencies:list[str] = [], delay:float = 0.1, width:float = 50):
         """Wrap inline python codes with a progressbar"""
+        
+        codes = []
+        self.__pyshellresults = {}
+        
+        variables=""""""
+        for c in dependencies:
+            variables += c + "\n"
+        
+        for x in pythoncodes:
+            code = variables + x + "\n"
+            codes.append(code)
+        
+        compiledcodes = self.__compile(codes=codes)
         
         widgets = [self.label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
         bar = progressbar.ProgressBar(widgets=widgets, maxval=100, term_width=width).start()
@@ -162,7 +197,7 @@ class Wrapper:
         
         for i in range(100):
             if i>=interval and (i==interval or i%interval==0) and iterator<len(pythoncodes):
-                exec(pythoncodes[iterator])
+                exec(compiledcodes[iterator], globals(), self.__pyshellresults)
                 iterator += 1
                 bar.update(i)
             else:
@@ -170,3 +205,8 @@ class Wrapper:
                 bar.update(i)
         
         bar.finish()
+    
+    def __fetchPyShellWrapperResults(self):
+        return self.__pyshellresults
+    
+    pyShellWrapperResults = property(fget=__fetchPyShellWrapperResults)
