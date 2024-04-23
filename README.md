@@ -21,7 +21,7 @@
 To install `wrapper-bar`, use pip.
 
 ```bash
-pip install wrapper-bar==0.1.2
+pip install wrapper-bar==0.1.3
 ```
 
 ## Usage
@@ -74,6 +74,41 @@ pip install wrapper-bar==0.1.2
     >>> wrapControl.pyShellWrapper(*params) # parametes are in the docstring.
     # pyShellWrapper can wrap inline python code across a progressbar.
     ```
+
+    Working of `pyShellWrapper`:
+
+    - `pyShellWrapper` takes two compulsory parameters => `pythoncodes` and `dependencies`. To explain them, let us see below
+
+      ```python
+      # pythoncodes and dependencies can have any python code except 
+      # return, print or yield statements.
+
+      # let us take this as an example:
+      >>> pythoncodes = ["""a = b+c""", """b=c+d"""]
+
+      # Now for the above python codes, values of 'b', 'c' and 'd' 
+      # are a dependency. Therefore
+      
+      >>> dependencies = ["""b=10""", """c=10\nd=20\n"""] 
+      
+      # try to keep one statement only inside """...""", 
+      # but if need be, then you can also put multiple 
+      # statements followed by '\n'. Like """c=10\nd=20\n"""
+
+      # and now we will execute them with the loading bar as the 
+      # front.
+      
+      >>> from wrapper_bar.wrapper import Wrapper
+      >>> w = Wrapper("Loading:")
+      >>> w.pyShellWrapper(pythoncodes, dependencies) # this will output the following:
+      Loading: |▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓|Time: 0:00:10
+      
+      # To fetch the outputs, we will use a property 'pyShellWrapperResults' 
+      # defined under the `Wrapper Class`
+
+      >>> a = w.pyShellWrapperResults['a'] # this will be 20
+      >>> b = w.pyShellWrapperResults['b'] # this will be 30
+      ```
 
 ## Uninstall
 
