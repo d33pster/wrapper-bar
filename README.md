@@ -23,7 +23,7 @@
 To install `wrapper-bar`, use pip.
 
 ```bash
-pip install wrapper-bar==0.1.3
+pip install wrapper-bar==0.1.4
 ```
 
 ## Usage
