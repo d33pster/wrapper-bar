@@ -30,9 +30,9 @@ from os.path import join as jPath, abspath
 from time import sleep
 from datetime import datetime
 from types import CodeType
-from re import match
 import progressbar
 import subprocess
+import sys
 
 from wrapper_bar.Exceptions import WrapperCodeDefinitionError
 
@@ -42,7 +42,7 @@ class Wrapper:
     `Usage:`
     >>> from wrapper_bar.wrapper import Wrapper
     
-    >>> wrapControl = Wrapper(label="Loading:")
+    >>> wrapControl = Wrapper()
     >>> wrapControl.decoy() # for demonstration.
     
     `Other Functions include:`
@@ -56,18 +56,26 @@ class Wrapper:
     # decoy function
     >>> wrapControl.decoy(delay:float (optional), width:float (optional))
     # shellWrapper function
-    >>> wrapControl.shellWrapper(shellcommands:list[str], delay:float (optional),
-                                 width:float (optional), logger:bool (optional),
-                                 logfile:TextIOWrapper (optional),
+    >>> wrapControl.shellWrapper(shellcommands:list[str], label:str = '' (optional),
+                                 delay:float (optional),
+                                 width:float (optional), timer:str (optional),
+                                 logger:bool (optional), logfile:TextIOWrapper (optional),
                                  logfile_auto_close:bool (optional))
     # pyWrapper function
-    >>> wrapControl.pyWrapper(pythonscripts:list[str], delay:float (optional),
-                                 width:float (optional), logger:bool (optional),
-                                 logfile:TextIOWrapper (optional),
-                                 logfile_auto_close:bool (optional))
+    >>> wrapControl.pyWrapper(pythonscripts:list[str], label:str = '' (optional),
+                                delay:float (optional),
+                                width:float (optional), timer:str (optional),
+                                logger:bool (optional), logfile:TextIOWrapper (optional),
+                                logfile_auto_close:bool (optional))
     # pyShellWrapper function
     >>> wrapControl.pyShellWrapper(pythoncodes: list[str], dependencies: list[str] (optional)
-                                   delay:float (optional), width:float (optional))
+                                   label:str = '' (optional),
+                                   timer:str = 'ETA' (optional), delay:float (optional),
+                                   width:float (optional))
+    
+    # timer parameter
+    default: 'ETA'
+    possible values: ['ETA', 'ElapsedTime']
     
     # pyShellWrapper parameters
     pythoncodes -> list of python codes
@@ -86,55 +94,101 @@ class Wrapper:
     Feel free to check out the code and do any modifications you like under the
     MIT License. ;)
     """
-    def __init__(self, label:str="", marker:str = "▓") -> None:
+    def __init__(self, marker:str = "▓") -> None:
         """Initialize the Wrapper class"""
-        self.label = label
         self.marker = marker
     
-    def decoy(self, delay: float = 0.1, width:float = 50):
-        """Create a decoy progress bar, that does nothing at all."""
-        widgets = [self.label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
-        bar = progressbar.ProgressBar(widgets=widgets, maxval=100, term_width=width).start()
+    def decoy(self, label:str = "", delay: float = 0.1, width:float = 50, timer: str = 'ETA'):
+        """Create a decoy progress bar, that does nothing at all.
         
-        for i in range(100):
-            sleep(delay)
-            bar.update(i)
-        
-        bar.finish()
+        `steps`:
+        >>> wrapControl = Wrapper()
+        >>> wrapControl.decoy()
+        """
+        if timer=='ETA':
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
+        elif timer=='ElapsedTime':
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.Timer()]
+        else:
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
+            
+        try:
+            bar = progressbar.ProgressBar(widgets=widgets, maxval=100, term_width=width).start()
+            
+            for i in range(100):
+                sleep(delay)
+                bar.update(i)
+            
+            bar.finish()
+        except KeyboardInterrupt:
+            pass
     
-    def shellWrapper(self, shellcommands: list[str], delay: float = 0.1, width:float = 50, logger:bool = False,
-                     logfile:TextIOWrapper = None, logfile_auto_close:bool = False):
-        """Wrap shell commands with the progressbar."""
+    def shellWrapper(self, shellcommands: list[str], label:str = "", delay: float = 0.1, width:float = 50, timer: str = 'ETA',
+                     logger:bool = False, logfile:TextIOWrapper = None, logfile_auto_close:bool = False):
+        """Wrap shell commands with the progressbar.
+        
+        `steps`:
+        >>> wrapControl.shellWrapper(shellcommands:list[str], label:str = '' (optional),
+                                    delay:float (optional),
+                                    width:float (optional), timer:str (optional),
+                                    logger:bool (optional), logfile:TextIOWrapper (optional),
+                                    logfile_auto_close:bool (optional))
+
+        `timer` parameter:
+        default: 'ETA'
+        possible values: ['ETA', 'ElapsedTime']
+        """
         if logger:
             if not logfile:
                 logfile = open(jPath(pwd(), '.log'), 'w')
         
-        widgets = [self.label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
-        bar = progressbar.ProgressBar(widgets=widgets, term_width=width, maxval=100).start()
+        if timer=='ETA':
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
+        elif timer=='ElapsedTime':
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.Timer()]
+        else:
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
         
-        interval = int(100/(len(shellcommands)+1))
-        iterator = 0
-        
-        for i in range(100):
-            if i>=interval and (i==interval or i%interval==0) and iterator<len(shellcommands):
-                logfile.write(f"{datetime.today().strftime('%B %d, %Y')} {datetime.now().strftime('%H hours %M minutes %S seconds')}\n")
-                logfile.write(f"Command Executed: \'{shellcommands[iterator]}\'\n")
-                subprocess.Popen(shellcommands[iterator].split(' '), stderr=logfile, stdout=logfile).wait()
-                logfile.write(f'\nEND\n')
-                iterator += 1
-                bar.update(i)
-            else:
-                sleep(delay)
-                bar.update(i)
-        
-        bar.finish()
+        try:
+            bar = progressbar.ProgressBar(widgets=widgets, term_width=width, maxval=100).start()
+            
+            interval = int(100/(len(shellcommands)+1))
+            iterator = 0
+            
+            for i in range(100):
+                if i>=interval and (i==interval or i%interval==0) and iterator<len(shellcommands):
+                    logfile.write(f"{datetime.today().strftime('%B %d, %Y')} {datetime.now().strftime('%H hours %M minutes %S seconds')}\n")
+                    logfile.write(f"Command Executed: \'{shellcommands[iterator]}\'\n")
+                    subprocess.Popen(shellcommands[iterator].split(' '), stderr=logfile, stdout=logfile).wait()
+                    logfile.write(f'\nEND\n')
+                    iterator += 1
+                    bar.update(i)
+                else:
+                    sleep(delay)
+                    bar.update(i)
+            
+            bar.finish()
+        except KeyboardInterrupt:
+            pass
         
         if logfile_auto_close:
             logfile.close()
     
-    def pyWrapper(self, pythonscripts: list[str], delay: float = 0.1, width: float = 50, logger:bool = False,
-                  logfile: TextIOWrapper = None, logfile_auto_close:bool = False):
-        """Wrap Python Scripts with the progressbar."""
+    def pyWrapper(self, pythonscripts: list[str], label:str = "", delay: float = 0.1, width: float = 50, timer:str = 'ETA',
+                  logger:bool = False, logfile: TextIOWrapper = None, logfile_auto_close:bool = False):
+        """Wrap Python Scripts with the progressbar.
+        
+        `steps`:
+        >>> wrapControl.pyWrapper(pythonscripts:list[str], label:str = '' (optional),
+                                delay:float (optional),
+                                width:float (optional), timer:str (optional),
+                                logger:bool (optional), logfile:TextIOWrapper (optional),
+                                logfile_auto_close:bool (optional))
+        
+        `timer` parameter:
+        default: 'ETA'
+        possible values: ['ETA', 'ElapsedTime']
+        """
         if logger:
             if not logfile:
                 logfile = open(jPath(pwd(), '.log'), 'w')
@@ -142,25 +196,34 @@ class Wrapper:
         for i in range(len(pythonscripts)):
             pythonscripts[i] = abspath(pythonscripts[i])
         
-        widgets = [self.label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
-        bar = progressbar.ProgressBar(widgets=widgets, maxval=100, term_width=width).start()
+        if timer=='ETA':
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
+        elif timer=='ElapsedTime':
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.Timer()]
+        else:
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
         
-        interval = int(100/(len(pythonscripts)+1))
-        iterator = 0
-        
-        for i in range(100):
-            if i>=interval and (i==interval or i%interval==0) and iterator<len(pythonscripts):
-                logfile.write(f"{datetime.today().strftime('%B %d, %Y')} {datetime.now().strftime('%H hours %M minutes %S seconds')}\n")
-                logfile.write(f"Python File Executed: \'{pythonscripts[iterator]}\'\n")
-                subprocess.Popen(['python'].extend(pythonscripts[iterator].split(' ')), stderr=logfile).wait()
-                logfile.write(f"\nEND\n")
-                iterator += 1
-                bar.update(i)
-            else:
-                sleep(delay)
-                bar.update(i)
-        
-        bar.finish()
+        try:
+            bar = progressbar.ProgressBar(widgets=widgets, maxval=100, term_width=width).start()
+            
+            interval = int(100/(len(pythonscripts)+1))
+            iterator = 0
+            
+            for i in range(100):
+                if i>=interval and (i==interval or i%interval==0) and iterator<len(pythonscripts):
+                    logfile.write(f"{datetime.today().strftime('%B %d, %Y')} {datetime.now().strftime('%H hours %M minutes %S seconds')}\n")
+                    logfile.write(f"Python File Executed: \'{pythonscripts[iterator]}\'\n")
+                    subprocess.Popen(['python'].extend(pythonscripts[iterator].split(' ')), stderr=logfile).wait()
+                    logfile.write(f"\nEND\n")
+                    iterator += 1
+                    bar.update(i)
+                else:
+                    sleep(delay)
+                    bar.update(i)
+            
+            bar.finish()
+        except KeyboardInterrupt:
+            pass
         
         if logfile_auto_close:
             logfile.close()
@@ -173,8 +236,25 @@ class Wrapper:
         
         return compiledcodes
     
-    def pyShellWrapper(self, pythoncodes: list[str], dependencies:list[str] = [], delay:float = 0.1, width:float = 50):
-        """Wrap inline python codes with a progressbar"""
+    def pyShellWrapper(self, pythoncodes: list[str], dependencies:list[str] = [], label:str = "", delay:float = 0.1, width:float = 50,
+                       timer:str = 'ETA'):
+        """Wrap inline python codes with a progressbar
+        
+        `steps`:
+        >>> wrapControl.pyShellWrapper(pythoncodes: list[str], dependencies: list[str] (optional)
+                                   label:str = '' (optional),
+                                   timer:str = 'ETA' (optional), delay:float (optional),
+                                   width:float (optional))
+    
+        `timer` parameter:
+        default: 'ETA'
+        possible values: ['ETA', 'ElapsedTime']
+        
+        `pyShellWrapper` parameters:
+        pythoncodes -> list of python codes
+        dependencies -> list of dependencies. Suppose 'a = b+c' is among the python codes list.
+                        Therefore, b and c's value are dependencies and depencies=['b=10', 'c=115'].
+        """
         
         codes = []
         self.__pyshellresults = {}
@@ -187,24 +267,37 @@ class Wrapper:
             code = variables + x + "\n"
             codes.append(code)
         
-        compiledcodes = self.__compile(codes=codes)
+        try:
+            compiledcodes = self.__compile(codes=codes)
+        except KeyboardInterrupt:
+            sys.exit(1)
+
         
-        widgets = [self.label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
-        bar = progressbar.ProgressBar(widgets=widgets, maxval=100, term_width=width).start()
+        if timer=='ETA':
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
+        elif timer=='ElapsedTime':
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.Timer()]
+        else:
+            widgets = [label+" ", progressbar.Bar(marker=self.marker), progressbar.AdaptiveETA()]
         
-        interval = int(100/(len(pythoncodes)+1))
-        iterator = 0
-        
-        for i in range(100):
-            if i>=interval and (i==interval or i%interval==0) and iterator<len(pythoncodes):
-                exec(compiledcodes[iterator], globals(), self.__pyshellresults)
-                iterator += 1
-                bar.update(i)
-            else:
-                sleep(delay)
-                bar.update(i)
-        
-        bar.finish()
+        try:
+            bar = progressbar.ProgressBar(widgets=widgets, maxval=100, term_width=width).start()
+            
+            interval = int(100/(len(pythoncodes)+1))
+            iterator = 0
+            
+            for i in range(100):
+                if i>=interval and (i==interval or i%interval==0) and iterator<len(pythoncodes):
+                    exec(compiledcodes[iterator], globals(), self.__pyshellresults)
+                    iterator += 1
+                    bar.update(i)
+                else:
+                    sleep(delay)
+                    bar.update(i)
+            
+            bar.finish()
+        except KeyboardInterrupt:
+            pass
     
     def __fetchPyShellWrapperResults(self):
         return self.__pyshellresults
