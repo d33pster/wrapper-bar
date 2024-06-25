@@ -10,6 +10,8 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wrapper-bar)
 ![Libraries.io dependency status for latest release](https://img.shields.io/librariesio/release/pypi/wrapper-bar)
 ![PyPI - License](https://img.shields.io/pypi/l/wrapper-bar)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/wrapper-bar)
+
 
 ## Table of Contents
 
