@@ -12,4 +12,6 @@ jobs:
 
         steps:
         # - uses: actions/checkout@v3
-        - uses: d33pster/python-project-structure@v2.4
+        - uses: d33pster/python-project-structure@v2.5
+          with:
+            GH_API_TOKEN: ${{ secrets.GH_API_TOKEN }}
