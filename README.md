@@ -2,6 +2,8 @@
 
 `Wrapper-Bar` is a python module to help wrap commands with the progress bar. `Wrapper-Bar` helps in wrapping shell commands, or even python scripts with a progress bar and ETA.
 
+Following `v0.1.5` onwards, It allows wrapping downloads too. It could be a direct download link or from github releases (both public and private repositoies)
+
 ## Badges
 
 ![PyPI - Version](https://img.shields.io/pypi/v/wrapper-bar)
@@ -10,7 +12,7 @@
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wrapper-bar)
 ![Libraries.io dependency status for latest release](https://img.shields.io/librariesio/release/pypi/wrapper-bar)
 ![PyPI - License](https://img.shields.io/pypi/l/wrapper-bar)
-![PyPI - Downloads](https://img.shields.io/pypi/dm/wrapper-bar)
+[![Downloads](https://static.pepy.tech/badge/wrapper-bar)](https://pepy.tech/project/wrapper-bar)
 
 
 ## Table of Contents
@@ -25,7 +27,7 @@
 To install `wrapper-bar`, use pip.
 
 ```bash
-pip install wrapper-bar==0.1.4
+pip install wrapper-bar==0.1.5
 ```
 
 ## Usage
@@ -85,7 +87,8 @@ pip install wrapper-bar==0.1.4
 
       ```python
       # pythoncodes and dependencies can have any python code except 
-      # return, print or yield statements.
+      # return, print or yield statements as they will interfere with
+      # the progress bar.
 
       # let us take this as an example:
       >>> pythoncodes = ["""a = b+c""", """b=c+d"""]
@@ -113,6 +116,91 @@ pip install wrapper-bar==0.1.4
       >>> a = w.pyShellWrapperResults['a'] # this will be 20
       >>> b = w.pyShellWrapperResults['b'] # this will be 30
       ```
+    
+  - `downloadWrapper` **_[[`v0.1.5`](https://pypi.org/project/wrapper-bar/0.1.5/)]_**
+
+    ```python
+    >>> wrapControl.downloadWrapper(*params) # parameters are in the docstring.
+    # downloadWrapper can wrap downloads from either a direct link or from github release (both public and private)
+    ```
+
+    working of `downloadWrapper`:
+
+    - Download files with a direct link using `downloadWrapper`:
+
+      ```python
+      # for direct download, following parameters are mandatory
+      # - link
+      # - download_to
+      # - download_filename (optional, if not left empty,
+      #   it will be derived from the link, if that fails,
+      #   it will raise an Exception.)
+      # - type (possible values: ['direct', 'github_release']).
+      #   We will choose 'direct' here.
+
+      >>> from wrapper_bar.wrapper import Wrapper
+      >>> wrapControl = Wrapper()
+      >>> wrapControl.downloadWrapper(link = "https://...",
+      ...              download_to = "<download-dir>",
+      ...              download_filename = "file.zip",
+      ...              type = 'direct')
+      
+      # the above code will output the following
+      file.zip: 100%|███████████████████████████████████████████| 45.1M/45.1M
+      ```
+    - Download files from a Github Release:
+      
+      - Public
+
+        ```python
+        # for downloading from a public repository release,
+        # following params are necessary
+        # - link (put your repository link here)
+        # - download_to
+        # - download_filename (optional, if not left empty,
+        #   it will be derived from the link, if that fails,
+        #   it will raise an Exception.)
+        # - type (possible values: ['direct', 'github_release']).
+        #   We will choose 'github_release' here.
+
+        >>> from wrapper_bar.wrapper import Wrapper
+        >>> wrapControl = Wrapper()
+        >>> wrapControl.downloadWrapper(link = "https://github.com/d33pster/Friday",
+        ...              download_to = "<download-dir>",
+        ...              download_filename = "bot.zip",
+        ...              type = 'github_release')
+
+        # this will output the following output
+        bot.zip: 100%|███████████████████████████████████████████| 45.1M/45.1M
+        ```
+
+      - Private
+
+        ```python
+        # for private repos, params needed:
+        # - link (put your repository link here)
+        # - download_to
+        # - download_filename (optional, if not left empty,
+        #   it will be derived from the link, if that fails,
+        #   it will raise an Exception.)
+        # - type (possible values: ['direct', 'github_release']).
+        #   We will choose 'github_release' here.
+        # - private_repo (set it to true)
+        # - github_api_token (generate one, and put it here).
+        # Wrapper Bar doesn't store it or use it for misuse (you can check the code.)
+        # - github_release: by default it is set to 'latest', but you can put release tags here as you need, like v1.0, v2.4.3, and so on.
+
+        >>> from wrapper_bar.wrapper import Wrapper
+        >>> wrapControl = Wrapper()
+        >>> wrapControl.downloadWrapper(link = "https://github.com/d33pster/Fridat",
+        ...              download_to = "<download-dir>",
+        ...              download_filename = "bot.zip",
+        ...              type = 'github_release'
+        ...              private_repo = True, github_api_token = "__your_token__")
+
+        # this will output the following:
+        bot.zip: 100%|███████████████████████████████████████████| 45.1M/45.1M
+        ```
 
 ## Uninstall
 
