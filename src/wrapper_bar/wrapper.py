@@ -26,15 +26,19 @@ wrapper module for wrapping commands across a progressbar.
 
 from io import TextIOWrapper
 from os import getcwd as pwd
-from os.path import join as jPath, abspath
+from os.path import join as jPath, abspath, isdir
+from pathlib import PurePosixPath
 from time import sleep
 from datetime import datetime
 from types import CodeType
+import requests.adapters
+from tqdm import tqdm
 import progressbar
 import subprocess
 import sys
+import requests
 
-from wrapper_bar.Exceptions import WrapperCodeDefinitionError
+from .Exceptions import *
 
 class Wrapper:
     """Wrapper Class: Wrap commands/scripts across a progress bar.
@@ -303,3 +307,117 @@ class Wrapper:
         return self.__pyshellresults
     
     pyShellWrapperResults = property(fget=__fetchPyShellWrapperResults)
+
+    def downloadWrapper(self, link: str, download_to: str, download_filename: str | None = None, type: str = 'direct', github_release: str = 'latest', private_repo: bool = False, github_api_token: str | None = None, label: str | None = None, width: int = 70, chunk_size: int = 1024):
+        """
+        Wrap downloads with a progressbar.
+
+        `steps`:
+        >>> wrapControl.downloadWrapper(link: str, download_to: str, download_filename: str | None (optional), type: str (optional), github_release: str (optional), private_repo: bool (optional), github_api_token: str | None (optional), label: str (optional))
+
+        `type` parameter:
+        default: 'direct'
+        possible_values: ['direct', 'github_release']
+
+        `github_release` parameter by default is set to 'latest'. If other releases are to be used, use the release tag -> v1.0, v2.3.1, and so on.
+
+        `private_repo` parameter is by default False, if downloading from a private repo release, set it to True.
+
+        `github_api_token` parameter needs to be set if `private_repo` parameter is set to True.
+
+        `download_filename` parameter is optional and by default is None. If no filename is provided, it will be derived from the url's basename.
+        This might cause problems in some cases, and therefore, if you are not sure, set a `download_filename`.
+
+        `NOTE:`
+        - This feature requires an active internet connection. If not found, it will raise an NoConnection Exception.
+        - `download_to` must be a folder, if not it will raise NotADirectory Exception.
+        - `download_filename` if not provided might raise DownloadFileNameErr if some exception occurs while deriving it from link. NOTE: you need to provide `download_filename` in case of `github_release`.
+        - If `type` is not in the defined range, it will raise typeErr.
+        - All Exceptions can be imported from `wrapper_bar.Exceptions`.
+        - If downloading an asset from github_release, specify the link to your repository in the `link` parameter. Also, If the repository is private, set the `github_api_token` parameter and set `private_repo` parameter to True.
+        
+        `Disclaimer`: `Wrapper Bar` in no way will tamper with your repository except downloading your assets!
+        """
+
+        # resolve download parameters
+        # download to
+        if not isdir(download_to):
+            raise NotADirectory("provided download_to parameter is not a directory.")
+        
+        # download_filename
+        if download_filename == None or download_filename == "":
+            try:
+                download_filename = PurePosixPath(link).name
+            except Exception as e:
+                raise DownloadFileNameErr("Error with deriving download_filename from link, Try setting it manually: {}", e)
+        
+        download_filename_path = jPath(download_to, download_filename)
+        
+        # type
+        if type not in ['direct', 'github_release']:
+            raise typeErr("Type is not in the defined range.")
+
+        # if `github_release`, follow these extra steps
+        if type == 'github_release':
+            # parse link.
+            if link.endswith(".git"):
+                repo = PurePosixPath(link).name.split(".")[0]
+            else:
+                repo = PurePosixPath(link).name
+            
+            username = PurePosixPath(link).parent.name
+
+            # make api_url
+            api_url = "https://api.github.com/repos/{}/{}/releases/{}".format(username, repo, github_release)
+
+            if private_repo:
+                if github_api_token == None or github_api_token == "":
+                    raise GitHubTokenMissing("for private repos, GitHub API Token is required.")
+                else:
+                    headers = {
+                        "Authorization": f"token {github_api_token}",
+                    }
+
+                    resp = requests.get(url=api_url, headers=headers)
+            else:
+                resp = requests.get(api_url)
+            
+            # raise errors if any
+            try:
+                resp.raise_for_status()
+            except Exception as e:
+                raise ConnectionErr("{}", e)
+            
+            resp = resp.json()
+
+            asset_url = None
+
+            for asset in resp['assets']:
+                if asset['name'] == download_filename:
+                    asset_url = asset['browser_download_url']
+                    break
+            
+            if not asset_url:
+                raise DownloadFileNotFound(f"{download_filename} is not found in there release: {github_release}.")
+        
+            link = asset_url
+        
+        # Download
+        response = requests.get(url=link, stream=True) if not private_repo else requests.get(url=link, headers=headers, stream=True)
+        total_size = int(response.headers.get('content-length', 0))
+
+        with open(download_filename_path, 'wb+') as file_ref, tqdm(
+            desc=label if label != None else download_filename,
+            total=total_size,
+            unit='iB',
+            unit_scale=True,
+            unit_divisor=1024,
+            bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}', # Remove the right most time and speed
+            ncols=width, # width
+        ) as bar:
+            # for data in chunks of block_size = 1024
+            for data in response.iter_content(chunk_size=chunk_size):
+                # write data
+                file_ref.write(data)
+                # update bar
+                bar.update(len(data))
