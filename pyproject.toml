@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wrapper-bar"
-version = "0.1.4"
+version = "0.1.5"
 description = "Progress Bar with command wrapping"
 requires-python = ">=3.9"
 classifiers = [
@@ -27,7 +27,7 @@ authors = [
 maintainers = [
     {name = "Soumyo Deep Gupta", email = "deep.main.ac@gmail.com"}
 ]
-dependencies = ['colorama', 'progressbar']
+dependencies = ['colorama', 'progressbar', 'requests', 'tqdm']
 
 [project.urls]
 GitHub = 'https://github.com/d33pster/wrapper-bar'
